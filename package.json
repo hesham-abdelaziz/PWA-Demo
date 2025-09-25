@@ -33,6 +33,7 @@
     "@angular/service-worker": "^20.3.0",
     "@angular/ssr": "^20.3.3",
     "express": "^5.1.0",
+    "idb": "^8.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
