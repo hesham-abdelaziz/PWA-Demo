@@ -28,10 +28,10 @@ let todos = [
 app.get('/api/todos', (_req, res) => res.json(todos));
 
 app.post('/api/todos', (req, res) => {
-  const { title } = req.body || {};
+  const { title, done = false } = req.body || {};
   if (!title) return res.status(400).json({ message: 'title is required' });
   const id = todos.length ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
-  const newTodo = { id, title, done: false };
+  const newTodo = { id, title, done: Boolean(done) };
   todos.push(newTodo);
   res.status(201).json(newTodo);
 });
@@ -42,7 +42,7 @@ app.patch('/api/todos/:id', (req, res) => {
   if (!todo) return res.status(404).json({ message: 'todo not found' });
   const { title, done } = req.body || {};
   if (title !== undefined) todo.title = title;
-  if (done !== undefined) todo.done = done;
+  if (done !== undefined) todo.done = Boolean(done);
   res.json(todo);
 });
 
