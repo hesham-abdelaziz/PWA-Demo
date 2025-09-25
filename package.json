@@ -3,8 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve -o --proxy-config proxy.conf.json",
+    "start:api": "node server/server.js",
+    "dev": "npm-run-all --parallel start start:api",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "serve:prod": "node server/server.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:pwa": "node dist/pwa/server/server.mjs"
@@ -32,7 +36,12 @@
     "@angular/router": "^20.3.0",
     "@angular/service-worker": "^20.3.0",
     "@angular/ssr": "^20.3.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

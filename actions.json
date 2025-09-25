@@ -1,0 +1,35 @@
+[
+  {
+    "notification": {
+      "title": "New items available",
+      "body": "Open Todos or Dismiss",
+      "icon": "assets/icons/icon-192x192.png",
+      "data": { "url": "/todos" },
+      "actions": [
+        { "action": "open-todos", "title": "Open Todos" },
+        { "action": "dismiss", "title": "Dismiss" }
+      ],
+      "requireInteraction": true,
+      "renotify": true,
+      "tag": "new-todos"
+    }
+  },
+
+  {
+    "notification": {
+      "title": "PWA demo",
+      "body": "This came from DevTools push ✅",
+      "icon": "assets/icons/icon-192x192.png",
+      "badge": "assets/icons/icon-192x192.png",
+      "data": { "url": "/" }
+    }
+  },
+
+  {
+    "data": {
+      "type": "new-todo",
+      "id": 42,
+      "title": "From push (data-only)"
+    }
+  }
+]
