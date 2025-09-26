@@ -11,7 +11,8 @@ export interface Todo {
 
 type PendingAction =
   | { type: 'add'; tempId: number; title: string; done: boolean }
-  | { type: 'toggle'; id: number; done: boolean };
+  | { type: 'toggle'; id: number; done: boolean }
+  | { type: 'delete'; id: number };
 
 const TODOS_CACHE_KEY = 'pwa-demo.todos';
 const QUEUE_CACHE_KEY = 'pwa-demo.queue';
@@ -80,6 +81,9 @@ export class Api {
       if (created) {
         this.todos.update((todos) => [...todos, created]);
         this.persistTodos();
+        this.offline.notify('Todo added', {
+          body: 'Your task was created successfully.',
+        });
       }
       return created;
     } catch (error) {
@@ -120,12 +124,48 @@ export class Api {
     return undefined;
   }
 
+  async deleteTodo(todo: Todo): Promise<boolean> {
+    const previous = this.todos();
+    this.todos.update((todos) => todos.filter((t) => t.id !== todo.id));
+    this.persistTodos();
+
+    if (!this.offline.isOnline()) {
+      if (todo.id < 0) {
+        this.removePendingAction((action) => action.type === 'add' && action.tempId === todo.id);
+      } else {
+        this.removePendingAction((action) => action.type === 'toggle' && action.id === todo.id);
+        this.queueAction({ type: 'delete', id: todo.id });
+      }
+      this.offline.notify('Saved offline', {
+        body: 'Todo deletion will sync once you are online.',
+      });
+      return true;
+    }
+
+    try {
+      await this.deleteRemoteTodo(todo.id);
+      this.offline.notify('Todo removed', {
+        body: 'The task was deleted successfully.',
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete todo', error);
+      this.todos.set(previous);
+      this.persistTodos();
+      return false;
+    }
+  }
+
   private async createRemoteTodo(title: string) {
     return firstValueFrom(this.http.post<Todo>('/api/todos', { title }));
   }
 
   private async updateRemoteTodo(id: number, done: boolean) {
     return firstValueFrom(this.http.patch<Todo>(`/api/todos/${id}`, { done }));
+  }
+
+  private async deleteRemoteTodo(id: number) {
+    return firstValueFrom(this.http.delete<void>(`/api/todos/${id}`));
   }
 
   private restoreFromStorage() {
@@ -171,24 +211,32 @@ export class Api {
   }
 
   private queueAction(action: PendingAction) {
-    const current = [...this.pendingActions()];
-    if (action.type === 'toggle') {
-      const existingIndex = current.findIndex((item) => item.type === 'toggle' && item.id === action.id);
-      if (existingIndex >= 0) {
-        current[existingIndex] = action;
-      } else {
-        current.push(action);
+    this.updatePendingActions((current) => {
+      if (action.type === 'add') {
+        const filtered = current.filter((item) => !(item.type === 'add' && item.tempId === action.tempId));
+        return [...filtered, action];
       }
-    } else {
-      const existingIndex = current.findIndex((item) => item.type === 'add' && item.tempId === action.tempId);
-      if (existingIndex >= 0) {
-        current[existingIndex] = action;
-      } else {
-        current.push(action);
-      }
-    }
 
-    this.pendingActions.set(current);
+      if (action.type === 'toggle') {
+        const filtered = current.filter(
+          (item) => !(item.type === 'toggle' && item.id === action.id) && !(item.type === 'delete' && item.id === action.id)
+        );
+        return [...filtered, action];
+      }
+
+      const filtered = current.filter((item) => !(item.type === 'toggle' && item.id === action.id) && !(item.type === 'delete' && item.id === action.id));
+      return [...filtered, action];
+    });
+  }
+
+  private removePendingAction(predicate: (action: PendingAction) => boolean) {
+    this.updatePendingActions((current) => current.filter((action) => !predicate(action)));
+  }
+
+  private updatePendingActions(update: (actions: PendingAction[]) => PendingAction[]) {
+    const current = [...this.pendingActions()];
+    const updated = update(current);
+    this.pendingActions.set(updated);
     this.persistQueue();
   }
 
@@ -219,11 +267,13 @@ export class Api {
             if (synced) {
               this.replaceTodo(action.tempId, synced);
             }
-          } else {
+          } else if (action.type === 'toggle') {
             const synced = await this.updateRemoteTodo(action.id, action.done);
             if (synced) {
               this.replaceTodo(action.id, synced);
             }
+          } else {
+            await this.deleteRemoteTodo(action.id);
           }
         } catch (error) {
           console.error('Failed to sync action', action, error);

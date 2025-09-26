@@ -177,6 +177,31 @@ form {
         font-size: 0.95rem;
       }
     }
+
+    button.delete {
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+
+      &:hover {
+        background: rgba(244, 67, 54, 0.2);
+        color: #ff8a80;
+        transform: translateY(-1px);
+      }
+
+      &:focus-visible {
+        outline: 2px solid rgba(244, 67, 54, 0.6);
+        outline-offset: 2px;
+      }
+    }
   }
 
   .empty {
