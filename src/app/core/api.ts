@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, computed, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { OfflineService } from './offline.service';
+import { OfflineService } from './offline-service/offline.service';
 
 export interface Todo {
   id: number;

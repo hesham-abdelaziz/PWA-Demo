@@ -2,7 +2,7 @@ import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Api, Todo } from '../core/api';
 import { isPlatformBrowser } from '@angular/common';
-import { OfflineService } from '../core/offline.service';
+import { OfflineService } from '../core/offline-service/offline.service';
 @Component({
   selector: 'app-todos',
   imports: [FormsModule],
