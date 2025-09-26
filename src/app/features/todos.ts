@@ -55,6 +55,9 @@ import { OfflineService } from '../core/offline.service';
               <input type="checkbox" (change)="toggle(todo)" [checked]="todo.done" />
               <span>{{ todo.title }}</span>
             </label>
+            <button type="button" class="delete" (click)="remove(todo)" aria-label="Delete todo">
+              <span aria-hidden="true">×</span>
+            </button>
             @if (todo.id < 0) {
             <span class="badge">offline</span>
             }
@@ -86,5 +89,9 @@ export class Todos {
 
   async toggle(todo: Todo) {
     await this.api.toggleTodo(todo, !todo.done);
+  }
+
+  async remove(todo: Todo) {
+    await this.api.deleteTodo(todo);
   }
 }
