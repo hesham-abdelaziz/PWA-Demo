@@ -1,6 +1,6 @@
 {
   "name": "pwa",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve -o --proxy-config proxy.conf.json",
@@ -11,7 +11,8 @@
     "serve:prod": "node server/server.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:pwa": "node dist/pwa/server/server.mjs"
+    "serve:ssr:pwa": "node dist/pwa/server/server.mjs",
+    "version:bump": "node tools/bump-version.js"
   },
   "prettier": {
     "printWidth": 100,

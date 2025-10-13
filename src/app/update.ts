@@ -1,32 +1,68 @@
 import { inject, Injectable } from '@angular/core';
-import { SwUpdate, VersionReadyEvent, SwPush } from '@angular/service-worker';
+import { SwUpdate, SwPush, VersionEvent, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class Update {
-  private sw = inject(SwUpdate);
-  private swPush = inject(SwPush);
-  init() {
-    if (!this.sw.isEnabled) {
+@Injectable({ providedIn: 'root' })
+export class UpdateService {
+  private sw = inject(SwUpdate, { optional: true });
+  private swPush = inject(SwPush, { optional: true });
+
+  async init() {
+    if (!this.sw?.isEnabled) {
       console.info('Service worker is not enabled');
       return;
     }
 
-    this.swPush.messages.subscribe((message) => {
-      console.log('Push message received: ', message);
+    // Listen BEFORE checks so we don't miss emissions
+    this.sw.versionUpdates.subscribe((e: VersionEvent) => {
+      switch (e.type) {
+        case 'VERSION_DETECTED':
+          console.log('New version detected. Downloading…', e.version);
+          break;
+        case 'VERSION_READY':
+          console.log('New version ready:', (e as VersionReadyEvent).latestVersion);
+          // Choose ONE strategy:
+
+          // A) Prompt the user (recommended UX)
+          if (confirm('A new version is available. Reload now?')) {
+            this.activateAndReload();
+          }
+
+          // B) Or force auto-reload with no prompt:
+          // this.activateAndReload();
+          break;
+        case 'NO_NEW_VERSION_DETECTED':
+          console.log('No new version.');
+          break;
+        case 'VERSION_INSTALLATION_FAILED':
+          console.warn('SW installation failed.');
+          break;
+      }
     });
 
-    this.swPush.notificationClicks.subscribe((notification) => {
-      console.log('Notification click received: ', notification);
-    });
+    try {
+      await this.sw.checkForUpdate();
+    } catch (error) {
+      console.error('Service worker update check failed', error);
+    }
 
-    this.sw.versionUpdates
-      .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_DETECTED'))
-      .subscribe(async () => {
-        await this.sw.activateUpdate();
-        document.location.reload();
-      });
+    // Push (only meaningful if Web Push is configured)
+    if (this.swPush?.isEnabled) {
+      this.swPush.messages.subscribe((msg) => console.log('Push message:', msg));
+      this.swPush.notificationClicks.subscribe((click) => console.log('Notification click:', click));
+    }
+  }
+
+  private async activateAndReload() {
+    try {
+      if (!this.sw) {
+        return;
+      }
+
+      await this.sw.activateUpdate();
+      location.reload();
+    } catch (err) {
+      console.error('activateUpdate failed', err);
+    }
   }
 }
